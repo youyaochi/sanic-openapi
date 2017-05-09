@@ -1,11 +1,12 @@
 import re
+from datetime import date, datetime
 from itertools import repeat
 
 from sanic.blueprints import Blueprint
 from sanic.response import json
 from sanic.views import CompositionView
 
-from .doc import route_specs, RouteSpec, serialize_schema, definitions
+from .doc import route_specs, RouteSpec, serialize_schema, definitions, Field, Integer, Boolean, String, Date, DateTime
 
 
 blueprint = Blueprint('openapi', url_prefix='openapi')
@@ -91,6 +92,7 @@ def build_spec(app, loop):
             } for parameter in route.parameters]
             query_string_parameters = []
             body_parameters = []
+            form_parameters = []
 
             if route_spec.consumes:
                 if _method in ('GET', 'DELETE'):
@@ -98,10 +100,51 @@ def build_spec(app, loop):
                     if 'properties' in spec:
                         for name, prop_spec in spec['properties'].items():
                             query_string_parameters.append({
-                                **prop_spec,
                                 'in': 'query',
+                                **prop_spec,
                                 'name': name,
                             })
+                elif _method in ('POST', 'PUT', 'PATCH') and hasattr(route_spec.consumes, '__dict__'):
+                    for name, schema in route_spec.consumes.__dict__.items():
+                        if isinstance(schema, Field):
+                            form_parameters.append({
+                                'in': 'formData',
+                                **schema.serialize(),
+                                'name': name,
+                            })
+                        elif not name.startswith('_') and schema is int:
+                            form_parameters.append({
+                                'in': 'formData',
+                                **Integer().serialize(),
+                                'name': name,
+                            })
+                        elif not name.startswith('_') and schema is str:
+                            form_parameters.append({
+                                'in': 'formData',
+                                **String().serialize(),
+                                'name': name,
+                            })
+                        elif not name.startswith('_') and schema is bool:
+                            form_parameters.append({
+                                'in': 'formData',
+                                **Boolean().serialize(),
+                                'name': name,
+                            })
+                        elif not name.startswith('_') and schema is date:
+                            form_parameters.append({
+                                'in': 'formData',
+                                **Date().serialize(),
+                                'name': name,
+                            })
+                        elif not name.startswith('_') and schema is datetime:
+                            form_parameters.append({
+                                'in': 'formData',
+                                **DateTime().serialize(),
+                                'name': name,
+                            })
+                        else:
+                            # not support list or dict
+                            pass
                 else:
                     body_parameters.append({
                         **serialize_schema(route_spec.consumes),
@@ -116,7 +159,7 @@ def build_spec(app, loop):
                 'consumes': consumes_content_types,
                 'produces': produces_content_types,
                 'tags': route_spec.tags or None,
-                'parameters': path_parameters + query_string_parameters + body_parameters,
+                'parameters': path_parameters + query_string_parameters + body_parameters + form_parameters,
                 'responses': {
                     "200": {
                         "description": None,

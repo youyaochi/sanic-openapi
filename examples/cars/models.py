@@ -1,4 +1,5 @@
 from datetime import date
+from sanic_openapi.doc import String, Date
 
 
 class Manufacturer:
@@ -7,8 +8,9 @@ class Manufacturer:
 
 
 class Driver:
-    name = str
-    birthday = date
+    name = String(description='Name of driver', required=True, at='formData')
+    birthday = Date(description='birthday of driver', required=False, at='formData')
+    Authorization = String(description='Token TOKEN', required=True, at='header')
 
 
 class Car:
