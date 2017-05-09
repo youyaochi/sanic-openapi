@@ -41,6 +41,34 @@ def build_spec(app, loop):
     }
     _spec['schemes'] = getattr(app.config, 'API_SCHEMES', ['http'])
 
+    security_definitions = []
+    _spec['securityDefinitions'] = {}
+    _security_definitions = getattr(app.config, 'API_SECURITY_DEFINITIONS', '')
+    if isinstance(_security_definitions, (tuple, list, set)):
+        security_definitions = [_name.lower() for _name in _security_definitions]
+    elif isinstance(_security_definitions, str):
+        security_definitions.append(_security_definitions.lower())
+
+    for security_definition in security_definitions:
+        if security_definition == 'basic':
+            _spec['securityDefinitions']['basic'] = {'type': 'basic'}
+        elif security_definition == 'apikey':
+            _spec['securityDefinitions']['apiKey'] = {
+                'type': 'apiKey',
+                'name': getattr(app.config, 'API_SECURITY_DEFINITIONS_NAME', 'token'),
+                'in': getattr(app.config, 'API_SECURITY_DEFINITIONS_IN', 'header')
+            }
+        elif security_definition == 'oauth2':
+            _spec['securityDefinitions']['oauth2'] = {
+                'type': 'oauth2',
+                'authorizationUrl': getattr(app.config, 'API_SECURITY_DEFINITIONS_URL',
+                                            'http://swagger.io/api/oauth/dialog'),
+                'flow': getattr(app.config, 'API_SECURITY_DEFINITIONS_FLOW', 'implicit'),
+                'scopes': getattr(app.config, 'API_SECURITY_DEFINITIONS_SCOPES',
+                                  {"write:pets": "modify pets in your account",
+                                   "read:pets": "read your pets"})
+            }
+
     # --------------------------------------------------------------- #
     # Blueprint Tags
     # --------------------------------------------------------------- #

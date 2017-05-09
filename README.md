@@ -90,3 +90,16 @@ app.config.API_TERMS_OF_SERVICE = 'Use with caution!'
 app.config.API_PRODUCES_CONTENT_TYPES = ['application/json']
 app.config.API_CONTACT_EMAIL = 'channelcat@gmail.com'
 ```
+
+#### Security definitions
+```python
+app.config.API_SECURITY_DEFINITIONS = ('basic', 'apiKey', 'oauth2')
+app.config.API_SECURITY_DEFINITIONS_NAME = 'token'
+app.config.API_SECURITY_DEFINITIONS_IN = 'header' or 'query'
+app.config.API_SECURITY_DEFINITIONS_URL = 'http://swagger.io/api/oauth/dialog'
+app.config.API_SECURITY_DEFINITIONS_FLOW = 'implicit' or 'password' or 'application' or 'accessCode'
+app.config.API_SECURITY_DEFINITIONS_SCOPES = {
+    "write:pets": "modify pets in your account",
+    "read:pets": "read your pets"
+}
+```
