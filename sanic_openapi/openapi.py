@@ -124,14 +124,56 @@ def build_spec(app, loop):
 
             if route_spec.consumes:
                 if _method in ('GET', 'DELETE'):
-                    spec = serialize_schema(route_spec.consumes)
-                    if 'properties' in spec:
-                        for name, prop_spec in spec['properties'].items():
-                            query_string_parameters.append({
-                                'in': 'query',
-                                **prop_spec,
-                                'name': name,
-                            })
+                    if hasattr(route_spec.consumes, '__dict__'):
+                        for name, schema in route_spec.consumes.__dict__.items():
+                            if isinstance(schema, Field):
+                                form_parameters.append({
+                                    'in': 'query',
+                                    **schema.serialize(),
+                                    'name': name,
+                                })
+                            elif not name.startswith('_') and schema is int:
+                                form_parameters.append({
+                                    'in': 'query',
+                                    **Integer().serialize(),
+                                    'name': name,
+                                })
+                            elif not name.startswith('_') and schema is str:
+                                form_parameters.append({
+                                    'in': 'query',
+                                    **String().serialize(),
+                                    'name': name,
+                                })
+                            elif not name.startswith('_') and schema is bool:
+                                form_parameters.append({
+                                    'in': 'query',
+                                    **Boolean().serialize(),
+                                    'name': name,
+                                })
+                            elif not name.startswith('_') and schema is date:
+                                form_parameters.append({
+                                    'in': 'query',
+                                    **Date().serialize(),
+                                    'name': name,
+                                })
+                            elif not name.startswith('_') and schema is datetime:
+                                form_parameters.append({
+                                    'in': 'query',
+                                    **DateTime().serialize(),
+                                    'name': name,
+                                })
+                            else:
+                                # not support list or dict
+                                pass
+                    else:
+                        spec = serialize_schema(route_spec.consumes)
+                        if 'properties' in spec:
+                            for name, prop_spec in spec['properties'].items():
+                                query_string_parameters.append({
+                                    'in': 'query',
+                                    **prop_spec,
+                                    'name': name,
+                                })
                 elif _method in ('POST', 'PUT', 'PATCH') and hasattr(route_spec.consumes, '__dict__'):
                     for name, schema in route_spec.consumes.__dict__.items():
                         if isinstance(schema, Field):
